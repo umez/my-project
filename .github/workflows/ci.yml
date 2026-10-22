@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npm run lint
+
+      - name: Unit and privacy tests
+        run: npm test
+
+      - name: Web production build
+        run: npm run build
+
+      - name: Privacy manifest check
+        run: node -e "const fs=require('fs');const m=fs.readFileSync('android/app/src/main/AndroidManifest.xml','utf8');if(/android.permission.INTERNET/.test(m)){console.error('INTERNET permission present');process.exit(1)}if(!/RECORD_AUDIO/.test(m)){console.error('RECORD_AUDIO missing');process.exit(1)}console.log('Android manifest privacy check passed')"
